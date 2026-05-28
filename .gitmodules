@@ -1,0 +1,9 @@
+[submodule "external/scope-ml"]
+	path = external/scope-ml
+	url = git@github.com:joh15016/scope-ml.git
+[submodule "external/lcurve-rs"]
+	path = external/lcurve-rs
+	url = https://github.com/scope-ml/lcurve-rs.git
+[submodule "external/periodfind"]
+	path = external/periodfind
+	url = https://github.com/scope-ml/periodfind.git

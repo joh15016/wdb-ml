@@ -1,0 +1,20 @@
+name: wdb-ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - pyarrow
+  - matplotlib
+  - pyyaml
+  - jupyterlab
+  - ipykernel
+  - deepdiff
+  - xgboost
+  - pip
+  - pip:
+      - -e .
+      - -e ./external/scope-ml[train]
+      - -e ./external/lcurve-rs/python
+      - -e ./external/periodfind

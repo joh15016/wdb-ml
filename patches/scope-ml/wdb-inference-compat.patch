@@ -1,0 +1,178 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 673a6c1..bfb4821 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -53,7 +53,7 @@ tables = ">=3.7,<3.9.2"
+ pyvo = ">=1.5"
+ 
+ [tool.poetry.extras]
+-train = ["tensorflow", "keras-tuner"]
++train = ["tensorflow", "tf-keras", "keras-tuner"]
+ 
+ [tool.poetry.dev-dependencies]
+ pre-commit = ">=3.5.0"
+diff --git a/tools/inference.py b/tools/inference.py
+index 8ebaebb..1ccfc21 100755
+--- a/tools/inference.py
++++ b/tools/inference.py
+@@ -1,5 +1,4 @@
+ #!/usr/bin/env python
+-import tensorflow as tf
+ import numpy as np
+ import pandas as pd
+ import pathlib
+@@ -18,13 +17,35 @@ from scope.utils import (
+     get_feature_stats,
+     parse_load_config,
+ )
+-from scope.xgb import XGB
+ from datetime import datetime
+ import argparse
+ 
+ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+ warnings.filterwarnings('ignore')
+ 
++
++def _load_tensorflow():
++    try:
++        os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
++        import tensorflow as tf
++    except ImportError as exc:
++        raise ImportError(
++            "TensorFlow is required for DNN inference. Install the SCoPe train "
++            "extra or add tensorflow to the active environment."
++        ) from exc
++    return tf
++
++
++def _load_xgb_class():
++    try:
++        from scope.xgb import XGB
++    except ImportError as exc:
++        raise ImportError(
++            "XGBoost is required for XGB inference. Install scope-ml with its "
++            "runtime dependencies or add xgboost to the active environment."
++        ) from exc
++    return XGB
++
+ BASE_DIR = pathlib.Path.cwd()
+ BASE_DIR_FEATS = BASE_DIR
+ BASE_DIR_PREDS = BASE_DIR
+@@ -258,8 +279,10 @@ def run_inference(
+ 
+     if xgb_model:
+         algorithm = 'xgb'
++        XGB = _load_xgb_class()
+     else:
+         algorithm = 'dnn'
++        tf = _load_tensorflow()
+ 
+     try:
+         field = int(field)
+@@ -370,42 +393,6 @@ def run_inference(
+         features = batch.to_pandas()
+         source_ids = features['_id'].astype("Int64").values
+ 
+-        ra_collection = np.concatenate([ra_collection, features['ra'].values])
+-        dec_collection = np.concatenate([dec_collection, features['dec'].values])
+-        period_collection = np.concatenate(
+-            [period_collection, features[period_colname].values]
+-        )
+-        field_collection = np.concatenate(
+-            [field_collection, features['field'].astype("Int64").values]
+-        )
+-        ccd_collection = np.concatenate(
+-            [ccd_collection, features['ccd'].astype("Int64").values]
+-        )
+-        quad_collection = np.concatenate(
+-            [quad_collection, features['quad'].astype("Int64").values]
+-        )
+-        gaia_edr3_id_collection = np.concatenate(
+-            [
+-                gaia_edr3_id_collection,
+-                features['Gaia_EDR3___id'].fillna(0).astype("Int64"),
+-            ]
+-        )
+-        allwise_id_collection = np.concatenate(
+-            [allwise_id_collection, features['AllWISE___id'].fillna(0).astype("Int64")]
+-        )
+-        ps1_dr1_id_collection = np.concatenate(
+-            [ps1_dr1_id_collection, features['PS1_DR1___id'].fillna(0).astype("Int64")]
+-        )
+-        try:
+-            filter_collection = np.concatenate(
+-                [filter_collection, features['filter'].astype("Int64").values]
+-            )
+-            found_filters = True
+-        except KeyError:
+-            warnings.warn('Could not find filter column.')
+-            found_filters = False
+-        source_id_count += len(source_ids)
+-
+         try:
+             features_metadata = json.loads(batch.schema.metadata[b'scope'])
+         except KeyError:
+@@ -445,17 +432,55 @@ def run_inference(
+             algorithm=algorithm,
+             period_suffix=period_suffix,
+         )
++        source_ids = features['_id'].astype("Int64").values
++
++        ra_collection = np.concatenate([ra_collection, features['ra'].values])
++        dec_collection = np.concatenate([dec_collection, features['dec'].values])
++        period_collection = np.concatenate(
++            [period_collection, features[period_colname].values]
++        )
++        field_collection = np.concatenate(
++            [field_collection, features['field'].astype("Int64").values]
++        )
++        ccd_collection = np.concatenate(
++            [ccd_collection, features['ccd'].astype("Int64").values]
++        )
++        quad_collection = np.concatenate(
++            [quad_collection, features['quad'].astype("Int64").values]
++        )
++        gaia_edr3_id_collection = np.concatenate(
++            [
++                gaia_edr3_id_collection,
++                features['Gaia_EDR3___id'].fillna(0).astype("Int64"),
++            ]
++        )
++        allwise_id_collection = np.concatenate(
++            [allwise_id_collection, features['AllWISE___id'].fillna(0).astype("Int64")]
++        )
++        ps1_dr1_id_collection = np.concatenate(
++            [ps1_dr1_id_collection, features['PS1_DR1___id'].fillna(0).astype("Int64")]
++        )
++        try:
++            filter_collection = np.concatenate(
++                [filter_collection, features['filter'].astype("Int64").values]
++            )
++            found_filters = True
++        except KeyError:
++            warnings.warn('Could not find filter column.')
++            found_filters = False
++        source_id_count += len(source_ids)
+ 
+         # Get feature stats using training set for scaling consistency
+-        if isinstance(trainingSet, str):
+-            if (trainingSet == 'use_config') & (len(TRAINING_SET) > 0):
+-                trainingSet = TRAINING_SET
+-            else:
+-                raise ValueError('Unable to find config-specified training set.')
+-        if feature_stats is None:
+-            feature_stats = get_feature_stats(trainingSet, feature_names)
+-        elif feature_stats == 'config':
++        if feature_stats == 'config':
+             feature_stats = config.get("feature_stats", None)
++        else:
++            if isinstance(trainingSet, str):
++                if (trainingSet == 'use_config') & (len(TRAINING_SET) > 0):
++                    trainingSet = TRAINING_SET
++                else:
++                    raise ValueError('Unable to find config-specified training set.')
++            if feature_stats is None:
++                feature_stats = get_feature_stats(trainingSet, feature_names)
+ 
+         if verbose:
+             print("Computed feature stats:\n", feature_stats)

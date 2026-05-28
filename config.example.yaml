@@ -1,0 +1,18 @@
+# Copy this file to config.yaml and fill in local credentials/paths.
+#
+# The notebooks currently read SCoPe configuration from external/scope-ml/config.yaml
+# through SCoPe's own config loader. Keep secrets out of Git.
+
+scope_ml:
+  path: external/scope-ml
+
+data:
+  gaia_wd_catalog: data/gaiaedr3_wd_main.fits
+  wd_scope_crossmatch: data/random_100_gaia_wd_scope_nonvariable.parquet
+  simulated_batch_dir: data/simulated_wdb_batch
+  simulated_queue_dir: data/scope_simulated_wdb_queue
+
+models:
+  xgb_dir: external/scope-ml/models_xgb/trained_xgb_models
+  dnn_dir: external/scope-ml/models_dnn/trained_dnn_models
+  training_set: external/scope-ml/tools/fritzDownload/merged_classifications_features.parquet

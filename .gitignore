@@ -1,0 +1,36 @@
+# Local credentials and machine-specific SCoPe configuration.
+config.yaml
+/scope-ml/
+/lcurve-rs
+/periodfind
+
+# Notebook/runtime scratch.
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Large local data and generated pipeline outputs.
+/data/*
+!/data/.gitkeep
+/outputs/*
+!/outputs/.gitkeep
+/generated_features*/
+/preds*/
+/test_plot.png
+/*.ipynb
+
+# SCoPe local artifacts if a dependency checkout is copied instead of submoduled.
+/external/*/config.yaml
+/external/*/fritzDownload/
+/external/*/tools/fritzDownload/
+/external/*/models_xgb/
+/external/*/models_dnn/
+/external/*/generated_features*/
+/external/*/preds*/
+/external/*/ids/
+/external/*/hpc_files/source_batches/
+/external/*/hpc_files/my_sources.csv
+/external/*/hpc_files/wdb_master_list.csv
