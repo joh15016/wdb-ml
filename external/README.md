@@ -14,5 +14,5 @@ external/
 Use Git submodules for reproducible installs, or manually clone the packages here
 before installing them in editable mode.
 
-`scope-ml` should point to a fork/branch containing the WDB inference
-compatibility patch in `patches/scope-ml/wdb-inference-compat.patch`.
+`scope-ml` should point to a fork containing the WDB inference compatibility
+changes required by the simulated inference pipeline.

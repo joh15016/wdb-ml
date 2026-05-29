@@ -27,8 +27,6 @@ wdb-ml/
     scope-ml/
     lcurve-rs/
     periodfind/
-  patches/
-    scope-ml/wdb-inference-compat.patch
   data/
   outputs/
 ```
@@ -69,40 +67,31 @@ SCoPe itself still reads `external/scope-ml/config.yaml`, so credentials and
 SCoPe-specific paths should be configured there as well. Do not commit either
 `config.yaml` file.
 
-## Using a SCoPe Fork
+## SCoPe Fork
 
-The simulated inference workflow needs a small SCoPe compatibility patch for:
+The `external/scope-ml` submodule should point to a fork of SCoPe that already
+contains the WDB compatibility changes needed by this project:
 
 - lazy TensorFlow/XGBoost imports
-- legacy Keras loading for saved DNN `.h5` models
+- legacy Keras loading for saved DNN `.h5` models via `tf-keras`
 - metadata alignment after inference row drops
 - `feature_stats='config'` handling
 
-The patch is stored at:
-
-```text
-patches/scope-ml/wdb-inference-compat.patch
-```
-
-After forking SCoPe on GitHub, point the submodule at your fork and apply the
-patch:
+After forking SCoPe on GitHub and pushing those changes to your fork's `main`,
+point the submodule at that fork and pin the updated commit:
 
 ```bash
 git submodule set-url external/scope-ml git@github.com:<your-user>/scope-ml.git
 git submodule sync external/scope-ml
-
-git -C external/scope-ml checkout -b wdb-ml-compat
-git -C external/scope-ml apply ../../patches/scope-ml/wdb-inference-compat.patch
-git -C external/scope-ml add pyproject.toml tools/inference.py
-git -C external/scope-ml commit -m "Add wdb-ml inference compatibility"
-git -C external/scope-ml push -u origin wdb-ml-compat
+git -C external/scope-ml checkout main
+git -C external/scope-ml pull origin main
 
 git add .gitmodules external/scope-ml
-git commit -m "Use patched scope-ml fork"
+git commit -m "Use wdb-compatible scope-ml fork"
 ```
 
-After that, new users can clone your `wdb-ml` repo with `--recurse-submodules`
-and get the pinned SCoPe fork commit.
+New users can then clone `wdb-ml` with `--recurse-submodules` and get the pinned
+SCoPe fork commit directly.
 
 ## Required Local Assets
 
